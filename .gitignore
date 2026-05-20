@@ -1,0 +1,61 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Build outputs
+release/
+datapacks/
+*.domestic.bak
+builder-debug.yml
+
+# Copyrighted data files (DO NOT COMMIT)
+src/data/all_songs.js
+src/data/full_bible.js
+src/data/full_bible_niv.js
+src/data/full_bible_cuv_traditional.js
+src/data/generated_bibles_preview/
+
+# Raw Bible databases
+src/original/
+*.bpro
+*.db
+
+# Backup files
+backup/
+*.backup
+*.old
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Claude Code
+.claude/
+
+# macOS
+*.dmg
+*.blockmap
+.DS_Store
+Thumbs.db
