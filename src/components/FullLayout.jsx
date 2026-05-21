@@ -105,9 +105,7 @@ const stripHtmlTags = (text) => {
 };
 
 const createBibleSlides = (book, chapter, verses, bibleVersion) => {
-  if (!verses || verses.length === 0) return [];
-
-  const slides = [];
+  if (!verses || verses.length === 0) return { slides: [], headers: [] };
 
   // 根据圣经版本使用不同限制
   const isEnglish = bibleVersion === 'kjv' || bibleVersion === 'niv';
@@ -123,23 +121,24 @@ const createBibleSlides = (book, chapter, verses, bibleVersion) => {
     refHeader = `${book}${chapter}:${firstVerse.verse}-${lastVerse.verse}`;
   }
 
+  const slides = [];
+  const headers = [];
+
   let currentSlideVerses = [];
   let currentLength = 0;
-
-  currentSlideVerses.push(refHeader);
-  currentLength = refHeader.length;
 
   verses.forEach((verse) => {
     const verseText = `${verse.verse}. ${stripHtmlTags(verse.content)}`;
     const verseLength = verseText.length;
     const additionalLength = currentSlideVerses.length > 0 ? 2 : 0;
     const wouldExceedLength = currentLength + verseLength + additionalLength > MAX_CHARS_PER_SLIDE;
-    const wouldExceedVerses = currentSlideVerses.length >= MAX_VERSES_PER_SLIDE + 1;
+    const wouldExceedVerses = currentSlideVerses.length >= MAX_VERSES_PER_SLIDE;
 
     if ((wouldExceedLength || wouldExceedVerses) && currentSlideVerses.length > 0) {
       slides.push(currentSlideVerses.join('\n'));
-      currentSlideVerses = [refHeader, verseText];
-      currentLength = refHeader.length + 2 + verseLength;
+      headers.push(refHeader);
+      currentSlideVerses = [verseText];
+      currentLength = verseLength;
     } else {
       currentSlideVerses.push(verseText);
       currentLength += verseLength + additionalLength;
@@ -148,9 +147,10 @@ const createBibleSlides = (book, chapter, verses, bibleVersion) => {
 
   if (currentSlideVerses.length > 0) {
     slides.push(currentSlideVerses.join('\n'));
+    headers.push(refHeader);
   }
 
-  return slides;
+  return { slides, headers };
 };
 
 const hasMixedSlides = (project) => {
@@ -178,6 +178,7 @@ const buildSelectedSong = (project) => ({
   id: project.id,
   title: project.name || project.title,
   slides: project.slides || [],
+  slideHeaders: project.slideHeaders || null,
   filePath: project.filePath,
   fileType: project.fileType,
   type: project.type,
@@ -338,13 +339,14 @@ function FullLayout() {
     const book = getBookLabel(bookId, uiLanguage);
     if (!verses || verses.length === 0) return;
 
-    const slides = createBibleSlides(book, chapter, verses, bibleVersion);
+    const { slides, headers } = createBibleSlides(book, chapter, verses, bibleVersion);
 
     const newProject = {
       id: `project_bible_${Date.now()}`,
       type: PROJECT_TYPES.BIBLE,
       name: `${book} ${chapter}${t.verseSuffix || ''}`.trim(),
       slides: slides,
+      slideHeaders: headers,
       verses: verses,
       createdAt: Date.now(),
     };
@@ -502,13 +504,14 @@ function FullLayout() {
       return;
     }
 
-    const slides = createBibleSlides(getBookLabel(selectedBookId, uiLanguage), selectedChapter, selectedVerses);
+    const { slides, headers } = createBibleSlides(getBookLabel(selectedBookId, uiLanguage), selectedChapter, selectedVerses);
 
     const newProject = {
       id: `project_bible_${Date.now()}`,
       type: PROJECT_TYPES.BIBLE,
       name: `${getBookLabel(selectedBookId, uiLanguage)} ${selectedChapter}${t.verseSuffix || ''}`.trim(),
       slides: slides,
+      slideHeaders: headers,
       verses: selectedVerses,
       createdAt: Date.now(),
     };
@@ -968,13 +971,14 @@ function FullLayout() {
         const { book, chapter, verses } = dropped.data;
         if (!verses || verses.length === 0) return;
 
-        const slides = createBibleSlides(book, chapter, verses, bibleVersion);
+        const { slides, headers } = createBibleSlides(book, chapter, verses, bibleVersion);
 
         const newProject = {
           id: `project_bible_${Date.now()}`,
           type: PROJECT_TYPES.BIBLE,
           name: `${book} ${chapter}${t.verseSuffix || ''}`.trim(),
           slides: slides,
+          slideHeaders: headers,
           verses: verses,
           createdAt: Date.now(),
         };
@@ -1051,13 +1055,16 @@ function FullLayout() {
         const { book, chapter, verses } = dropped.data;
         if (!verses || verses.length === 0) return;
 
-        const newSlides = createBibleSlides(book, chapter, verses);
+        const { slides: newSlides, headers: newHeaders } = createBibleSlides(book, chapter, verses);
 
         if (selectedProject && selectedSong) {
+          const existingHeaders = selectedProject.slideHeaders || Array(selectedSong.slides.length).fill(null);
           const updatedSlides = [...selectedSong.slides, ...newSlides];
+          const updatedHeaders = [...existingHeaders, ...newHeaders];
           const updatedProject = {
             ...selectedProject,
             slides: updatedSlides,
+            slideHeaders: updatedHeaders.some(h => h !== null) ? updatedHeaders : null,
             // Keep filePath/fileType if they exist (for mixed content)
           };
           setSelectedSong(buildSelectedSong(updatedProject));
@@ -1069,6 +1076,7 @@ function FullLayout() {
             type: PROJECT_TYPES.BIBLE,
             name: `${book} ${chapter}${t.verseSuffix || ''}`.trim(),
             slides: newSlides,
+            slideHeaders: newHeaders,
             verses: verses,
             createdAt: Date.now(),
           };
@@ -1132,13 +1140,14 @@ function FullLayout() {
     const { book, chapter, verses } = data;
     if (!verses || verses.length === 0) return;
 
-    const slides = createBibleSlides(book, chapter, verses, bibleVersion);
+    const { slides, headers } = createBibleSlides(book, chapter, verses, bibleVersion);
 
     const newProject = {
       id: `project_bible_${Date.now()}`,
       type: PROJECT_TYPES.BIBLE,
       name: `${book} ${chapter}${t.verseSuffix || ''}`.trim(),
       slides: slides,
+      slideHeaders: headers,
       verses: verses,
       createdAt: Date.now(),
     };
@@ -1528,8 +1537,8 @@ function FullLayout() {
       sourceSelected: uiLanguage === 'en' ? 'Source selected' : uiLanguage === 'zh-Hant' ? '已選擇投屏源' : '已选择投屏源',
       dragHint: uiLanguage === 'en' ? 'Drag content here to edit' : uiLanguage === 'zh-Hant' ? '拖到這裡進行編輯' : '拖到这里进行编辑',
       customThemeTitle: uiLanguage === 'en' ? 'Custom theme' : uiLanguage === 'zh-Hant' ? '自訂主題' : '自定义主题',
-      textColor: uiLanguage === 'en' ? 'Text' : uiLanguage === 'zh-Hant' ? '字' : '字',
-      backgroundColor: uiLanguage === 'en' ? 'Bg' : uiLanguage === 'zh-Hant' ? '背' : '背',
+      textColor: uiLanguage === 'en' ? 'Text Color' : uiLanguage === 'zh-Hant' ? '文字顏色' : '文字颜色',
+      backgroundColor: uiLanguage === 'en' ? 'Bg Color' : uiLanguage === 'zh-Hant' ? '背景顏色' : '背景颜色',
       fontSize: uiLanguage === 'en' ? 'Size' : uiLanguage === 'zh-Hant' ? '字號' : '字号',
       lineHeight: uiLanguage === 'en' ? 'Line' : uiLanguage === 'zh-Hant' ? '行高' : '行高',
       letterSpacing: uiLanguage === 'en' ? 'Spacing' : uiLanguage === 'zh-Hant' ? '字距' : '字间距',
@@ -1664,25 +1673,31 @@ function FullLayout() {
                 <div className="color-picker-row">
                   <div className="color-picker-item">
                     <label>{editPanelCopy.textColor}</label>
-                    <input
-                      type="color"
-                      value={customTextColor}
-                      onChange={(e) => {
-                        setCustomTextColor(e.target.value);
-                        if (isProjectionActive) updateProjection();
-                      }}
-                    />
+                    <div className="color-picker-control">
+                      <input
+                        type="color"
+                        value={customTextColor}
+                        onChange={(e) => {
+                          setCustomTextColor(e.target.value);
+                          if (isProjectionActive) updateProjection();
+                        }}
+                      />
+                      <span className="color-value">{customTextColor}</span>
+                    </div>
                   </div>
                   <div className="color-picker-item">
                     <label>{editPanelCopy.backgroundColor}</label>
-                    <input
-                      type="color"
-                      value={customBgColor}
-                      onChange={(e) => {
-                        setCustomBgColor(e.target.value);
-                        if (isProjectionActive) updateProjection();
-                      }}
-                    />
+                    <div className="color-picker-control">
+                      <input
+                        type="color"
+                        value={customBgColor}
+                        onChange={(e) => {
+                          setCustomBgColor(e.target.value);
+                          if (isProjectionActive) updateProjection();
+                        }}
+                      />
+                      <span className="color-value">{customBgColor}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2416,6 +2431,11 @@ function FullLayout() {
 
     return () => clearTimeout(timer);
   }, [songSearchText]);
+
+  // ===== 导航切换时关闭诗歌预览 =====
+  useEffect(() => {
+    setHoveredSongFromLibrary(null);
+  }, [currentNav]);
 
   // ===== 诗歌搜索和筛选（优化版）=====
   const filteredSongs = useMemo(() => {
@@ -7552,25 +7572,9 @@ function FullLayout() {
             overflow: 'hidden'
           }}
         >
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '12px'
-          }}>
-            <h4 style={{ margin: 0, fontSize: '15px', color: '#000000', fontWeight: 400 }}>
-              {hoveredSongFromLibrary.title}
-            </h4>
-            <button
-              className="btn primary"
-              style={{ padding: '8px 16px', fontSize: '12px', background: '#323341', color: '#ffffff', borderRadius: '0px' }}
-              onClick={() => {
-                selectSongFromLibrary(hoveredSongFromLibrary);
-              }}
-            >
-              {uiLanguage === 'en' ? '+ Add to project' : uiLanguage === 'zh-Hant' ? '+ 添加到項目' : '+ 添加到项目'}
-            </button>
-          </div>
+          <h4 style={{ margin: 0, marginBottom: '12px', fontSize: '15px', color: '#000000', fontWeight: 400 }}>
+            {hoveredSongFromLibrary.title}
+          </h4>
           <div style={{
             flex: 1,
             overflowY: 'auto',

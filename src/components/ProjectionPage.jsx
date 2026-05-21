@@ -450,6 +450,8 @@ function ProjectionPage() {
   }
 
   const slideContent = currentSong.slides[currentSlideIndex];
+  const slideHeaders = currentSong.slideHeaders;
+  const currentSlideHeader = slideHeaders ? slideHeaders[currentSlideIndex] : null;
 
   const hasMedia = currentSong.fileType && currentSong.filePath;
   const isMediaFile = isMediaSlide(currentSong, slideContent, currentSlideIndex);
@@ -657,6 +659,44 @@ function ProjectionPage() {
           }}>
             <span style={{ fontSize: '60px' }}>⚠️</span>
             <span style={{ fontSize: '28px' }}>{currentSong.title || slideContent}</span>
+          </div>
+        </>
+      ) : currentSlideHeader ? (
+        <>
+          <div style={{
+            position: 'absolute',
+            top: '48px',
+            left: '0',
+            right: '0',
+            textAlign: theme.textAlign,
+            fontFamily: theme.fontFamily,
+            fontSize: Math.round(theme.fontSize * 0.65) + 'px',
+            lineHeight: theme.lineHeight,
+            letterSpacing: (theme.letterSpacing || 0) + 'px',
+            color: theme.textColor,
+            zIndex: 10,
+            padding: '0 40px',
+            textShadow: background && background.type === 'video' ? '2px 2px 8px rgba(0,0,0,0.8)' : 'none'
+          }}>
+            {currentSlideHeader}
+          </div>
+          <div style={{
+            fontFamily: theme.fontFamily,
+            fontSize: theme.fontSize + 'px',
+            lineHeight: theme.lineHeight,
+            textAlign: theme.textAlign,
+            letterSpacing: (theme.letterSpacing || 0) + 'px',
+            whiteSpace: 'pre-wrap',
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            maxWidth: '90%',
+            maxHeight: '75vh',
+            overflow: 'hidden',
+            position: 'relative',
+            zIndex: 10,
+            textShadow: background && background.type === 'video' ? '2px 2px 8px rgba(0,0,0,0.8)' : 'none'
+          }}>
+            {slideContent}
           </div>
         </>
       ) : (
