@@ -151,10 +151,10 @@ See [SECURITY.md](SECURITY.md) for known limitations and vulnerability reporting
 
 If you find this app useful, consider supporting its development:
 
-- 爱发电 (Afdian): [afdian.net/a/issayh](https://afdian.net/a/issayh)
+- 爱发电 (Afdian): [ifdian.net/a/issawork7877](https://ifdian.net/a/issawork7877)
 - [GitHub Sponsors](https://github.com/sponsors/issawork7877)
 
 如果你觉得这个软件对你有帮助，欢迎通过以下方式支持开发：
 
-- 爱发电: [afdian.net/a/issayh](https://afdian.net/a/issayh)
+- 爱发电: [ifdian.net/a/issawork7877](https://ifdian.net/a/issawork7877)
 - [GitHub Sponsors](https://github.com/sponsors/issawork7877)

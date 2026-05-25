@@ -6956,7 +6956,7 @@ function FullLayout() {
                     <button
                       className="tool-btn tool-btn-primary"
                       style={{ fontSize: '13px', padding: '8px 16px' }}
-                      onClick={() => window.electronAPI?.openExternal('https://afdian.net/a/issayh')}
+                      onClick={() => window.electronAPI?.openExternal('https://ifdian.net/a/issawork7877')}
                     >
                       💚 {uiLanguage === 'en' ? 'Support Us' : uiLanguage === 'zh-Hant' ? '支持我們' : '支持我们'}
                     </button>
