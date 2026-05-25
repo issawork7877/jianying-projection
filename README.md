@@ -37,7 +37,7 @@ npm run electron:dev
 
 ## Installation / 安装
 
-Download the latest installer from [GitHub Releases](https://github.com/issayh/jianying-projection/releases).
+Download the latest installer from [GitHub Releases](https://github.com/issawork7877/jianying-projection/releases).
 
 | Platform | Format |
 |----------|--------|
@@ -45,7 +45,7 @@ Download the latest installer from [GitHub Releases](https://github.com/issayh/j
 | Windows | `.exe` (NSIS installer) |
 | Linux | `.deb` |
 
-从 [GitHub Releases](https://github.com/issayh/jianying-projection/releases) 下载最新安装包。
+从 [GitHub Releases](https://github.com/issawork7877/jianying-projection/releases) 下载最新安装包。
 
 ## International vs Domestic / 国际版与国内版
 
@@ -149,6 +149,12 @@ See [SECURITY.md](SECURITY.md) for known limitations and vulnerability reporting
 
 ## Support / 支持
 
-If you find this app useful, consider supporting its development through [GitHub Sponsors](https://github.com/sponsors/issayh).
+If you find this app useful, consider supporting its development:
 
-如果你觉得这个软件对你有帮助，欢迎通过 [GitHub Sponsors](https://github.com/sponsors/issayh) 支持开发。
+- 爱发电 (Afdian): [afdian.net/a/issayh](https://afdian.net/a/issayh)
+- [GitHub Sponsors](https://github.com/sponsors/issawork7877)
+
+如果你觉得这个软件对你有帮助，欢迎通过以下方式支持开发：
+
+- 爱发电: [afdian.net/a/issayh](https://afdian.net/a/issayh)
+- [GitHub Sponsors](https://github.com/sponsors/issawork7877)

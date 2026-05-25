@@ -1,6 +1,29 @@
-const { app, BrowserWindow, ipcMain, screen, desktopCapturer, Menu, dialog, protocol } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, desktopCapturer, Menu, dialog, protocol, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const log = require('electron-log');
+const { autoUpdater } = require('electron-updater');
+
+// Single instance lock — prevent multiple app instances
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+}
+
+// Crash handlers for the main process
+process.on('uncaughtException', (error) => {
+  log.error('Uncaught exception:', error.message, error.stack);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('app-error', {
+      message: error.message,
+      type: 'uncaughtException',
+    });
+  }
+});
+
+process.on('unhandledRejection', (reason) => {
+  log.error('Unhandled rejection:', reason);
+});
 
 let mainWindow = null;
 let projectionWindow = null;
@@ -17,6 +40,20 @@ let stageDisplayIndex = -1;
 const isDev = !app.isPackaged;
 const VITE_DEV_SERVER_URL = 'http://localhost:5173';
 
+// Register custom scheme with privileges for media playback (must be before app.whenReady)
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'local-file',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+      stream: true,
+    },
+  },
+]);
+
 function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1600,
@@ -29,7 +66,6 @@ function createMainWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, '../preload.js'),
-      webSecurity: false,
     },
     title: '简影投屏',
   });
@@ -183,7 +219,6 @@ function createExternalDisplay(displayConfig = {}) {
         nodeIntegration: false,
         contextIsolation: true,
         preload: path.join(__dirname, '../preload.js'),
-        webSecurity: false,
       },
       backgroundColor: '#1a1a1a',
     });
@@ -216,7 +251,6 @@ function createExternalDisplay(displayConfig = {}) {
         nodeIntegration: false,
         contextIsolation: true,
         preload: path.join(__dirname, '../preload.js'),
-        webSecurity: false,
       },
       backgroundColor: '#1a1a1a',
     });
@@ -264,7 +298,6 @@ function createLiveDisplay(displayInfo) {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, '../preload.js'),
-      webSecurity: false,
     },
   });
 
@@ -294,7 +327,6 @@ function createStageDisplay(displayInfo) {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, '../preload.js'),
-      webSecurity: false,
     },
     backgroundColor: '#0d1117',
   });
@@ -382,17 +414,126 @@ function sendToolUpdate(data) {
   }
 }
 
+// Second instance — focus existing window instead of creating new one
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
+
+app.on('before-quit', () => {
+  log.info('App quitting, cleaning up...');
+  closeAllWindows();
+});
+
 app.whenReady().then(() => {
-  // 注册自定义协议来安全地加载本地文件
-  protocol.registerFileProtocol('local-file', (request, callback) => {
-    let filePath = request.url.replace('local-file://', '');
-    // 解码 URL 编码的字符
-    try {
-      filePath = decodeURIComponent(filePath);
-    } catch (e) {
-      // 如果解码失败，使用原始路径
+  log.info('App ready');
+
+  // Auto-updater setup
+  autoUpdater.logger = log;
+  autoUpdater.autoDownload = false;
+
+  autoUpdater.on('update-available', (info) => {
+    log.info('Update available:', info.version);
+    if (mainWindow) {
+      mainWindow.webContents.send('update-available', info);
     }
-    callback({ path: filePath });
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    log.info('Update downloaded:', info.version);
+    if (mainWindow) {
+      mainWindow.webContents.send('update-downloaded', info);
+    }
+  });
+
+  autoUpdater.on('error', (err) => {
+    log.error('Update error:', err.message);
+  });
+
+  // Check for updates on startup (production only)
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdates().catch(() => {});
+  }
+  // MIME type map for common media files
+  const mimeTypes = {
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm',
+    '.mov': 'video/quicktime',
+    '.mkv': 'video/x-matroska',
+    '.avi': 'video/x-msvideo',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.svg': 'image/svg+xml',
+    '.mp3': 'audio/mpeg',
+    '.wav': 'audio/wav',
+    '.ogg': 'audio/ogg',
+  };
+
+  // Register custom protocol for loading local files with proper media support
+  protocol.handle('local-file', (request) => {
+    // Use URL class to properly parse the request URL
+    // This handles both local-file:///absolute/path and local-file://host/path formats
+    const parsed = new URL(request.url);
+    // Reconstruct the file path from the URL's pathname
+    // If the URL has a host (e.g. local-file://Users/...), the host was meant to be part of the path
+    let rawPath;
+    if (parsed.host) {
+      rawPath = '/' + parsed.host + parsed.pathname;
+    } else {
+      rawPath = parsed.pathname;
+    }
+    let filePath;
+    try {
+      filePath = decodeURIComponent(rawPath);
+    } catch (e) {
+      filePath = rawPath;
+    }
+
+    try {
+      const stat = fs.statSync(filePath);
+      const fileSize = stat.size;
+      const ext = path.extname(filePath).toLowerCase();
+      const contentType = mimeTypes[ext] || 'application/octet-stream';
+      const rangeHeader = request.headers.get('Range');
+
+      if (rangeHeader) {
+        const parts = rangeHeader.replace('bytes=', '').split('-');
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        const chunkSize = end - start + 1;
+
+        const buf = Buffer.alloc(chunkSize);
+        const fd = fs.openSync(filePath, 'r');
+        fs.readSync(fd, buf, 0, chunkSize, start);
+        fs.closeSync(fd);
+
+        return new Response(buf, {
+          status: 206,
+          headers: {
+            'Content-Type': contentType,
+            'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+            'Content-Length': String(chunkSize),
+            'Accept-Ranges': 'bytes',
+          },
+        });
+      }
+
+      const data = fs.readFileSync(filePath);
+      return new Response(data, {
+        headers: {
+          'Content-Type': contentType,
+          'Content-Length': String(fileSize),
+          'Accept-Ranges': 'bytes',
+        },
+      });
+    } catch (err) {
+      return new Response('File not found', { status: 404 });
+    }
   });
 
   createMainWindow();
@@ -439,7 +580,7 @@ app.whenReady().then(() => {
             thumbnail: source.thumbnail.toDataURL()
           }));
         } catch (permError) {
-          console.error('Permission error:', permError);
+          log.error('Permission error:', permError);
 
           try {
             const status = systemPreferences.getMediaAccessStatus('screen');
@@ -453,7 +594,7 @@ app.whenReady().then(() => {
               },
             ];
           } catch (e) {
-            console.error('Error checking permission:', e);
+            log.error('Error checking permission:', e);
           }
         }
       }
@@ -468,7 +609,7 @@ app.whenReady().then(() => {
         thumbnail: source.thumbnail.toDataURL()
       }));
     } catch (error) {
-      console.error('Error getting sources:', error);
+      log.error('Error getting sources:', error);
       return [
         {
           id: 'error',
@@ -556,6 +697,10 @@ app.whenReady().then(() => {
     };
   });
 
+  ipcMain.on('open-external', (_, url) => {
+    shell.openExternal(url);
+  });
+
   ipcMain.handle('open-file-dialog', async (event, options) => {
     const result = await dialog.showOpenDialog(mainWindow, options || {});
     return result;
@@ -563,7 +708,14 @@ app.whenReady().then(() => {
 
   ipcMain.handle('read-file', async (event, filePath) => {
     try {
-      const content = fs.readFileSync(filePath, 'utf-8');
+      const resolvedPath = path.resolve(filePath);
+      const userDataPath = app.getPath('userData');
+      const appPath = app.getAppPath();
+      // Only allow reads within userData and app directories
+      if (!resolvedPath.startsWith(userDataPath) && !resolvedPath.startsWith(appPath)) {
+        return { success: false, error: 'Access denied: path outside allowed directories' };
+      }
+      const content = fs.readFileSync(resolvedPath, 'utf-8');
       return { success: true, content };
     } catch (error) {
       return { success: false, error: error.message };
@@ -587,14 +739,38 @@ app.whenReady().then(() => {
 
       return { success: true, targetPath };
     } catch (error) {
-      console.error('Copy file error:', error);
+      log.error('Copy file error:', error);
       return { success: false, error: error.message };
     }
   });
 
-  // 工具更新 - 直接发送到投影窗口
+  // Tool update — send directly to projection window
   ipcMain.on('update-tool', (event, data) => {
     sendToolUpdate(data);
+  });
+
+  // Renderer error logging
+  ipcMain.handle('log-error', (event, errorInfo) => {
+    log.error('Renderer error:', errorInfo.message, errorInfo.stack);
+    return { logged: true };
+  });
+
+  ipcMain.handle('log-event', (event, eventInfo) => {
+    log.info('Renderer event:', eventInfo);
+    return { logged: true };
+  });
+
+  // Auto-update controls
+  ipcMain.on('download-update', () => {
+    log.info('User triggered update download');
+    autoUpdater.downloadUpdate().catch((err) => {
+      log.error('Download update failed:', err.message);
+    });
+  });
+
+  ipcMain.on('install-update', () => {
+    log.info('User triggered update install');
+    autoUpdater.quitAndInstall();
   });
 
   // 保留旧的API以兼容
@@ -638,5 +814,3 @@ app.on('activate', () => {
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 app.commandLine.appendSwitch('disable-http-cache');
 app.commandLine.appendSwitch('enable-usermedia-screen-capturing');
-app.commandLine.appendSwitch('disable-site-isolation-trials');
-app.commandLine.appendSwitch('disable-web-security');

@@ -494,7 +494,7 @@ function ProjectionPage() {
     if (!isMediaFile) return null;
 
     const filePath = currentSong.filePath?.startsWith('/')
-      ? `local-file://${currentSong.filePath}`
+      ? `local-file://${encodeURI(currentSong.filePath)}`
       : currentSong.filePath;
 
     switch (fileType) {

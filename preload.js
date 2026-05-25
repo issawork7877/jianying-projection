@@ -59,4 +59,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   hideClock: () => ipcRenderer.send('hide-clock'),
   onClockData: (callback) => ipcRenderer.on('clock-data', callback),
   removeClockDataListener: (callback) => ipcRenderer.removeListener('clock-data', callback),
+
+  // Logging & error reporting
+  logError: (errorInfo) => ipcRenderer.invoke('log-error', errorInfo),
+  logEvent: (eventInfo) => ipcRenderer.invoke('log-event', eventInfo),
+
+  // Open external links
+  openExternal: (url) => ipcRenderer.send('open-external', url),
+
+  // Auto-updates
+  onUpdateAvailable: (callback) => ipcRenderer.on('update-available', callback),
+  onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', callback),
+  onAppError: (callback) => ipcRenderer.on('app-error', callback),
+  downloadUpdate: () => ipcRenderer.send('download-update'),
+  installUpdate: () => ipcRenderer.send('install-update'),
 });

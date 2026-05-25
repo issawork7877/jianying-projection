@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>简影投屏 · JianYing Projection</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #141414;
+    --border: #2a2a2a;
+    --text: #ccc;
+    --text-dim: #777;
+    --text-bright: #fff;
+    --accent: #fff;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --mono: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- Nav ---- */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .nav-brand img { width: 32px; height: 32px; }
+  .nav-brand span { font-size: 15px; font-weight: 600; color: var(--text-bright); letter-spacing: 0.5px; }
+  .nav-lang {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+  }
+  .nav-lang button {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 12px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-family: var(--font);
+    letter-spacing: 0.3px;
+  }
+  .nav-lang button.active { color: var(--text-bright); background: var(--surface); }
+  .nav-lang button + button { border-left: 1px solid var(--border); }
+
+  /* ---- Sections ---- */
+  section { padding: 80px 32px; max-width: 960px; margin: 0 auto; }
+  section + section { border-top: 1px solid var(--border); }
+
+  /* ---- Hero ---- */
+  .hero { padding: 96px 32px 80px; text-align: center; }
+  .hero img { width: 80px; height: 80px; margin-bottom: 32px; }
+  .hero h1 { font-size: 36px; font-weight: 600; color: var(--text-bright); letter-spacing: 1px; margin-bottom: 12px; }
+  .hero .subtitle { font-size: 18px; color: var(--text-dim); font-weight: 400; margin-bottom: 8px; }
+  .hero .tagline { font-size: 14px; color: var(--text-dim); margin-bottom: 40px; }
+  .hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .hero-cta a {
+    display: inline-block;
+    padding: 12px 28px;
+    font-size: 14px;
+    font-family: var(--font);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    color: var(--text-bright);
+    background: var(--surface);
+    letter-spacing: 0.5px;
+  }
+  .hero-cta a:hover { border-color: #555; }
+  .hero-cta a.primary { background: var(--accent); color: #000; border-color: var(--accent); }
+  .hero-cta a.primary:hover { background: #e0e0e0; }
+
+  /* ---- Features ---- */
+  .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    margin-bottom: 48px;
+    text-align: center;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+  }
+  .feature-card {
+    background: var(--bg);
+    padding: 32px 24px;
+  }
+  .feature-card .icon { font-size: 24px; margin-bottom: 16px; color: var(--text-bright); }
+  .feature-card h3 { font-size: 14px; font-weight: 600; color: var(--text-bright); margin-bottom: 8px; letter-spacing: 0.3px; }
+  .feature-card p { font-size: 13px; color: var(--text-dim); }
+
+  /* ---- Screenshots ---- */
+  .screenshots-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+  }
+  .screenshot-main {
+    grid-column: 1 / -1;
+  }
+  .screenshot-item {
+    line-height: 0;
+  }
+  .screenshot-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* ---- Downloads ---- */
+  .downloads-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+  }
+  .download-card {
+    background: var(--bg);
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .download-card .os { font-size: 13px; font-weight: 600; color: var(--text-bright); margin-bottom: 4px; }
+  .download-card .format { font-size: 12px; color: var(--text-dim); margin-bottom: 20px; font-family: var(--mono); }
+  .download-card a {
+    display: inline-block;
+    padding: 8px 20px;
+    font-size: 12px;
+    font-family: var(--font);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    color: var(--text-bright);
+    letter-spacing: 0.3px;
+  }
+  .download-card a:hover { border-color: #555; }
+
+  /* ---- Data Pack CTA ---- */
+  .datapack-section {
+    text-align: center;
+  }
+  .datapack-section p { font-size: 14px; color: var(--text-dim); margin-bottom: 8px; }
+  .datapack-btn {
+    display: inline-block;
+    padding: 12px 28px;
+    font-size: 14px;
+    font-family: var(--font);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-bright);
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+    margin-top: 24px;
+  }
+  .datapack-btn:hover { border-color: #555; }
+
+  .datapack-contact {
+    display: none;
+    margin-top: 24px;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    text-align: left;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .datapack-contact.visible { display: block; }
+  .datapack-contact h3 { font-size: 14px; color: var(--text-bright); margin-bottom: 16px; }
+  .datapack-contact .contact-item { font-size: 13px; color: var(--text-dim); margin-bottom: 8px; font-family: var(--mono); }
+  .datapack-contact .contact-item strong { color: var(--text); font-family: var(--font); }
+
+  /* ---- Support ---- */
+  .support-links {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .support-links a {
+    display: inline-block;
+    padding: 10px 22px;
+    font-size: 13px;
+    font-family: var(--font);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    color: var(--text);
+    letter-spacing: 0.3px;
+  }
+  .support-links a:hover { border-color: #555; }
+
+  /* ---- Footer ---- */
+  footer {
+    padding: 48px 32px;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+  }
+  footer a { color: var(--text); text-decoration: none; }
+  footer a:hover { color: var(--text-bright); }
+  footer .links { display: flex; gap: 24px; justify-content: center; margin-bottom: 16px; }
+
+  /* ---- Responsive ---- */
+  @media (max-width: 768px) {
+    section { padding: 56px 20px; }
+    .hero { padding: 64px 20px 56px; }
+    .hero h1 { font-size: 26px; }
+    .hero .subtitle { font-size: 15px; }
+    .features-grid { grid-template-columns: 1fr; }
+    .downloads-grid { grid-template-columns: 1fr; }
+    .screenshots-grid { grid-template-columns: 1fr; }
+    nav { padding: 16px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-brand">
+    <img src="icon-512.png" alt="Logo" width="32" height="32">
+    <span lang-key="navTitle">简影投屏</span>
+  </div>
+  <div class="nav-lang">
+    <button onclick="switchLang('zh')" class="active" id="btn-zh">中文</button>
+    <button onclick="switchLang('en')" id="btn-en">English</button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <img src="icon-512.png" alt="简影投屏" width="80" height="80">
+  <h1 lang-key="heroTitle">简影投屏</h1>
+  <p class="subtitle" lang-key="heroSub">极简主义教会投影软件</p>
+  <p class="tagline" lang-key="heroTag">免费 · 开源 · 跨平台</p>
+  <div class="hero-cta">
+    <a href="#downloads" class="primary" lang-key="heroDownload">下载</a>
+    <a href="https://github.com/issawork7877/jianying-projection" lang-key="heroGitHub">GitHub</a>
+  </div>
+</section>
+
+<!-- Features -->
+<section>
+  <div class="section-label" lang-key="featuresLabel">功能</div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="icon">&#9670;</div>
+      <h3 lang-key="feat1Title">圣经经文投影</h3>
+      <p lang-key="feat1Desc">支持 KJV 公共领域圣经，通过数据包导入更多版本</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">&#9835;</div>
+      <h3 lang-key="feat2Title">诗歌歌词投屏</h3>
+      <p lang-key="feat2Desc">幻灯片式歌词展示，支持 5 首内置公共领域诗歌，可通过数据包扩展至数万首</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">&#9638;</div>
+      <h3 lang-key="feat3Title">自定义背景</h3>
+      <p lang-key="feat3Desc">支持 JPG/PNG/WebP 静态图片和 MP4/MOV/WebM 动态视频背景</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">&#9633;</div>
+      <h3 lang-key="feat4Title">多屏幕输出</h3>
+      <p lang-key="feat4Desc">主投影、舞台屏、直播屏、外接显示 — 一套操作控制全部</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">&#9716;</div>
+      <h3 lang-key="feat5Title">倒计时 & 时钟</h3>
+      <p lang-key="feat5Desc">内建倒计时和时钟工具，直接投屏到投影窗口</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">&#8645;</div>
+      <h3 lang-key="feat6Title">数据包导入系统</h3>
+      <p lang-key="feat6Desc">通过 .jydata 格式导入更多圣经版本和诗歌库，灵活扩展</p>
+    </div>
+  </div>
+</section>
+
+<!-- Screenshots -->
+<section>
+  <div class="section-label" lang-key="screenshotsLabel">截图</div>
+  <div class="screenshots-grid">
+    <div class="screenshot-item screenshot-main">
+      <img src="screen-3.png" alt="简影投屏主界面" loading="lazy">
+    </div>
+    <div class="screenshot-item">
+      <img src="screen-1.png" alt="简影投屏截图" loading="lazy">
+    </div>
+    <div class="screenshot-item">
+      <img src="screen-2.png" alt="简影投屏截图" loading="lazy">
+    </div>
+  </div>
+</section>
+
+<!-- Downloads -->
+<section id="downloads">
+  <div class="section-label" lang-key="downloadsLabel">下载</div>
+  <div class="downloads-grid">
+    <div class="download-card">
+      <div class="os">macOS</div>
+      <div class="format">Apple Silicon + Intel</div>
+      <a href="https://github.com/issawork7877/jianying-projection/releases" lang-key="dlMac">下载 .dmg</a>
+    </div>
+    <div class="download-card">
+      <div class="os">Windows</div>
+      <div class="format">x64 · NSIS 安装包</div>
+      <a href="https://github.com/issawork7877/jianying-projection/releases" lang-key="dlWin">下载 .exe</a>
+    </div>
+    <div class="download-card">
+      <div class="os">Linux</div>
+      <div class="format">x64 · .deb / .AppImage</div>
+      <a href="https://github.com/issawork7877/jianying-projection/releases" lang-key="dlLinux">下载 .deb</a>
+    </div>
+  </div>
+</section>
+
+<!-- Data Packs -->
+<section class="datapack-section">
+  <div class="section-label" lang-key="datapackLabel">数据包</div>
+  <p lang-key="datapackDesc">通过 .jydata 数据包导入更多圣经版本和诗歌库</p>
+  <p lang-key="datapackDesc2">获取中文和合本圣经、NIV 英文圣经、数万首赞美诗等扩展内容</p>
+  <a class="datapack-btn" onclick="toggleContact()" lang-key="datapackBtn">获取数据包</a>
+
+  <div class="datapack-contact" id="contact-panel">
+    <h3 lang-key="contactTitle">获取数据包</h3>
+    <div class="contact-item">
+      <strong lang-key="contactWechat">微信</strong>：issawork777
+    </div>
+    <div class="contact-item">
+      <strong lang-key="contactEmail">邮箱</strong>：issawork7877@gmail.com
+    </div>
+  </div>
+</section>
+
+<!-- Support -->
+<section>
+  <div class="section-label" lang-key="supportLabel">支持开发</div>
+  <div class="support-links">
+    <a href="https://github.com/sponsors/issawork7877">GitHub Sponsors</a>
+    <a href="https://afdian.net/a/issawork7877">爱发电</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="links">
+    <a href="https://github.com/issawork7877/jianying-projection">GitHub</a>
+    <a href="https://github.com/issawork7877/jianying-projection/blob/main/LICENSE">MIT License</a>
+  </div>
+  <p>&copy; 2026 简影投屏 · JianYing Projection</p>
+</footer>
+
+<script>
+  // Language strings
+  const strings = {
+    zh: {
+      navTitle: "简影投屏",
+      heroTitle: "简影投屏",
+      heroSub: "极简主义教会投影软件",
+      heroTag: "免费 · 开源 · 跨平台",
+      heroDownload: "下载",
+      heroGitHub: "GitHub",
+      featuresLabel: "功能",
+      feat1Title: "圣经经文投影",
+      feat1Desc: "支持 KJV 公共领域圣经，通过数据包导入更多版本",
+      feat2Title: "诗歌歌词投屏",
+      feat2Desc: "幻灯片式歌词展示，支持 5 首内置公共领域诗歌，可通过数据包扩展至数万首",
+      feat3Title: "自定义背景",
+      feat3Desc: "支持 JPG/PNG/WebP 静态图片和 MP4/MOV/WebM 动态视频背景",
+      feat4Title: "多屏幕输出",
+      feat4Desc: "主投影、舞台屏、直播屏、外接显示 — 一套操作控制全部",
+      feat5Title: "倒计时 & 时钟",
+      feat5Desc: "内建倒计时和时钟工具，直接投屏到投影窗口",
+      feat6Title: "数据包导入系统",
+      feat6Desc: "通过 .jydata 格式导入更多圣经版本和诗歌库，灵活扩展",
+      screenshotsLabel: "截图",
+      screenshotsSoon: "即将上线",
+      downloadsLabel: "下载",
+      dlMac: "下载 .dmg",
+      dlWin: "下载 .exe",
+      dlLinux: "下载 .deb",
+      datapackLabel: "数据包",
+      datapackDesc: "通过 .jydata 数据包导入更多圣经版本和诗歌库",
+      datapackDesc2: "获取中文和合本圣经、NIV 英文圣经、数万首赞美诗等扩展内容",
+      datapackBtn: "获取数据包",
+      contactTitle: "获取数据包",
+      contactWechat: "微信",
+      contactEmail: "邮箱",
+      supportLabel: "支持开发"
+    },
+    en: {
+      navTitle: "JianYing Projection",
+      heroTitle: "JianYing Projection",
+      heroSub: "Minimalist Worship Projection Software",
+      heroTag: "Free · Open Source · Cross-Platform",
+      heroDownload: "Download",
+      heroGitHub: "GitHub",
+      featuresLabel: "Features",
+      feat1Title: "Bible Verse Projection",
+      feat1Desc: "KJV Bible built-in (public domain). Import more translations via data packs",
+      feat2Title: "Hymn & Lyric Projection",
+      feat2Desc: "Slide-based lyric display with 5 built-in public domain hymns, expandable to thousands",
+      feat3Title: "Custom Backgrounds",
+      feat3Desc: "Support for static images (JPG/PNG/WebP) and video backgrounds (MP4/MOV/WebM)",
+      feat4Title: "Multi-Display Output",
+      feat4Desc: "Main projection, stage display, live feed, external monitor — all from one control panel",
+      feat5Title: "Countdown & Clock",
+      feat5Desc: "Built-in countdown timer and clock display, projected directly to the output screen",
+      feat6Title: "Data Pack System",
+      feat6Desc: "Import additional Bible translations and song libraries via the .jydata format",
+      screenshotsLabel: "Screenshots",
+      screenshotsSoon: "Coming soon",
+      downloadsLabel: "Downloads",
+      dlMac: "Download .dmg",
+      dlWin: "Download .exe",
+      dlLinux: "Download .deb",
+      datapackLabel: "Data Packs",
+      datapackDesc: "Import additional Bible translations and song libraries via .jydata data packs",
+      datapackDesc2: "Access Chinese Union Version Bible, NIV, and thousands of hymns as expansion content",
+      datapackBtn: "Get Data Packs",
+      contactTitle: "Get Data Packs",
+      contactWechat: "WeChat",
+      contactEmail: "Email",
+      supportLabel: "Support"
+    }
+  };
+
+  let currentLang = 'zh';
+
+  function switchLang(lang) {
+    currentLang = lang;
+    document.querySelectorAll('[lang-key]').forEach(el => {
+      const key = el.getAttribute('lang-key');
+      if (strings[lang][key]) {
+        el.textContent = strings[lang][key];
+      }
+    });
+    document.getElementById('btn-zh').classList.toggle('active', lang === 'zh');
+    document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  }
+
+  function toggleContact() {
+    const panel = document.getElementById('contact-panel');
+    panel.classList.toggle('visible');
+  }
+</script>
+
+</body>
+</html>

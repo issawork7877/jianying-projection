@@ -54,6 +54,9 @@ backup/
 # Claude Code
 .claude/
 
+# Cloudflare
+.wrangler/
+
 # macOS
 *.dmg
 *.blockmap

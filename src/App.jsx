@@ -1,5 +1,6 @@
 import React from 'react';
 import { createHashRouter, RouterProvider } from 'react-router-dom';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 import FullLayout from './components/FullLayout.jsx';
 import ProjectionPage from './components/ProjectionPage.jsx';
 import ExternalDisplayPage from './components/ExternalDisplayPage.jsx';
@@ -36,7 +37,11 @@ const router = createHashRouter([
 ]);
 
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <ErrorBoundary>
+      <RouterProvider router={router} />
+    </ErrorBoundary>
+  );
 }
 
 export default App;

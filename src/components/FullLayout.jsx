@@ -9,6 +9,8 @@ import { bibleVersions, bibleVersionMap } from '../data/bibleVersions';
 import { uiCopy } from '../data/i18n';
 import { getImportedSongs } from '../data/loader';
 import DataPackManager from './DataPackManager';
+import { stripHtmlTags, parseVerseList, parseQuickSearch, createBibleSlides } from '../utils/bible';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import './MainPage.css';
 import './FullLayout.css';
 
@@ -23,135 +25,8 @@ const PROJECT_TYPES = {
   CUSTOM: 'custom',
 };
 
-const parseVerseList = (text) => {
-  if (!text) return [];
-  const verses = [];
 
-  text.split(',').forEach((part) => {
-    const trimmed = part.trim();
-    if (!trimmed) return;
-    const range = trimmed.split('-');
-    if (range.length === 2) {
-      const start = parseInt(range[0], 10);
-      const end = parseInt(range[1], 10);
-      if (!Number.isNaN(start) && !Number.isNaN(end)) {
-        for (let verse = start; verse <= end; verse += 1) {
-          verses.push(verse);
-        }
-      }
-      return;
-    }
 
-    const verse = parseInt(trimmed, 10);
-    if (!Number.isNaN(verse)) {
-      verses.push(verse);
-    }
-  });
-
-  return verses;
-};
-
-const parseQuickSearch = (text, selectedBookId) => {
-  if (!text || text.trim().length < 1) return null;
-
-  const trimmed = text.trim();
-  const pattern1 = /^(.+?)\s+(\d+)(?:\s+([\d\-,]+))?$/;
-  const match1 = trimmed.match(pattern1);
-
-  if (match1) {
-    const matchedBook = matchBibleBook(match1[1]);
-    if (matchedBook) {
-      return {
-        type: 'quick',
-        bookId: matchedBook.id,
-        chapter: parseInt(match1[2], 10),
-        verses: parseVerseList(match1[3]),
-      };
-    }
-  }
-
-  const pattern2 = /^([^\d]+?)(\d+)(?::([\d\-,]+))?$/;
-  const match2 = trimmed.match(pattern2);
-
-  if (match2) {
-    const matchedBook = matchBibleBook(match2[1]);
-    if (matchedBook) {
-      return {
-        type: 'quick',
-        bookId: matchedBook.id,
-        chapter: parseInt(match2[2], 10),
-        verses: parseVerseList(match2[3]),
-      };
-    }
-  }
-
-  const pattern3 = /^(\d+)(?:\s+([\d\-,]+))?$/;
-  const match3 = trimmed.match(pattern3);
-  if (match3 && selectedBookId) {
-    return {
-      type: 'chapter-only',
-      chapter: parseInt(match3[1], 10),
-      verses: parseVerseList(match3[2]),
-    };
-  }
-
-  return null;
-};
-
-// ===== 去除HTML标签函数 =====
-const stripHtmlTags = (text) => {
-  if (!text) return text;
-  return text.replace(/<[^>]*>/g, '');
-};
-
-const createBibleSlides = (book, chapter, verses, bibleVersion) => {
-  if (!verses || verses.length === 0) return { slides: [], headers: [] };
-
-  // 根据圣经版本使用不同限制
-  const isEnglish = bibleVersion === 'kjv' || bibleVersion === 'niv';
-  const MAX_CHARS_PER_SLIDE = isEnglish ? 300 : 230;
-  const MAX_VERSES_PER_SLIDE = isEnglish ? 5 : 4;
-
-  const firstVerse = verses[0];
-  const lastVerse = verses[verses.length - 1];
-  let refHeader = '';
-  if (verses.length === 1) {
-    refHeader = firstVerse.ref;
-  } else {
-    refHeader = `${book}${chapter}:${firstVerse.verse}-${lastVerse.verse}`;
-  }
-
-  const slides = [];
-  const headers = [];
-
-  let currentSlideVerses = [];
-  let currentLength = 0;
-
-  verses.forEach((verse) => {
-    const verseText = `${verse.verse}. ${stripHtmlTags(verse.content)}`;
-    const verseLength = verseText.length;
-    const additionalLength = currentSlideVerses.length > 0 ? 2 : 0;
-    const wouldExceedLength = currentLength + verseLength + additionalLength > MAX_CHARS_PER_SLIDE;
-    const wouldExceedVerses = currentSlideVerses.length >= MAX_VERSES_PER_SLIDE;
-
-    if ((wouldExceedLength || wouldExceedVerses) && currentSlideVerses.length > 0) {
-      slides.push(currentSlideVerses.join('\n'));
-      headers.push(refHeader);
-      currentSlideVerses = [verseText];
-      currentLength = verseLength;
-    } else {
-      currentSlideVerses.push(verseText);
-      currentLength += verseLength + additionalLength;
-    }
-  });
-
-  if (currentSlideVerses.length > 0) {
-    slides.push(currentSlideVerses.join('\n'));
-    headers.push(refHeader);
-  }
-
-  return { slides, headers };
-};
 
 const hasMixedSlides = (project) => {
   if (!project?.slides?.length) return false;
@@ -226,7 +101,6 @@ function FullLayout() {
   const [customBackgrounds, setCustomBackgrounds] = useState([]);
   const [deletedDefaultBackgroundIds, setDeletedDefaultBackgroundIds] = useState([]);
   const [datapackModalOpen, setDatapackModalOpen] = useState(false);
-  const [rewardModalOpen, setRewardModalOpen] = useState(false);
 
   // ===== 圣经状态 =====
   const [bibleSearchText, setBibleSearchText] = useState('');
@@ -1837,7 +1711,7 @@ function FullLayout() {
                       <div className="media-preview" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', padding: '8px' }}>
                         {selectedSong.fileType === FILE_TYPES.IMAGE && (
                           <img
-                            src={`local-file://${selectedSong.filePath}`}
+                            src={`local-file://${encodeURI(selectedSong.filePath)}`}
                             alt={slide}
                             className="slide-image-preview"
                             style={{ maxWidth: '100%', maxHeight: '120px', objectFit: 'contain' }}
@@ -1847,7 +1721,7 @@ function FullLayout() {
                         {selectedSong.fileType === FILE_TYPES.VIDEO && (
                           <>
                             <video
-                              src={`local-file://${selectedSong.filePath}`}
+                              src={`local-file://${encodeURI(selectedSong.filePath)}`}
                               className="slide-video-preview"
                               controls
                               style={{ maxWidth: '100%', maxHeight: '120px', objectFit: 'contain' }}
@@ -1869,7 +1743,7 @@ function FullLayout() {
                             <span className="media-icon">🎵</span>
                             <span className="media-name" style={{ fontSize: '11px', textAlign: 'center' }}>{slide}</span>
                             <audio
-                              src={`local-file://${selectedSong.filePath}`}
+                              src={`local-file://${encodeURI(selectedSong.filePath)}`}
                               className="slide-audio-preview"
                               controls
                               style={{ width: '100%', maxWidth: '200px' }}
@@ -1884,7 +1758,7 @@ function FullLayout() {
                         {selectedSong.fileType === FILE_TYPES.PDF && (
                           <div style={{ width: '100%', height: '150px' }}>
                             <iframe
-                              src={`local-file://${selectedSong.filePath}`}
+                              src={`local-file://${encodeURI(selectedSong.filePath)}`}
                               className="slide-pdf-preview"
                               style={{ width: '100%', height: '100%', border: '1px solid #cccccc', borderRadius: '0px' }}
                               title={slide}
@@ -1999,7 +1873,7 @@ function FullLayout() {
                     <div className="media-display" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', position: 'absolute', top: 0, left: 0 }}>
                       {selectedSong.fileType === FILE_TYPES.IMAGE && (
                         <img
-                          src={`local-file://${selectedSong.filePath}`}
+                          src={`local-file://${encodeURI(selectedSong.filePath)}`}
                           alt={selectedSong.title}
                           className="display-image"
                           style={{
@@ -2016,7 +1890,7 @@ function FullLayout() {
                       )}
                       {selectedSong.fileType === FILE_TYPES.VIDEO && (
                         <video
-                          src={`local-file://${selectedSong.filePath}`}
+                          src={`local-file://${encodeURI(selectedSong.filePath)}`}
                           className="display-video"
                           style={{
                             maxWidth: '100%',
@@ -2048,7 +1922,7 @@ function FullLayout() {
                           <span style={{ fontSize: '32px' }}>🎵</span>
                           <span style={{ fontSize: '10px', fontWeight: 'bold', textAlign: 'center' }}>{selectedSong.title}</span>
                           <audio
-                            src={`local-file://${selectedSong.filePath}`}
+                            src={`local-file://${encodeURI(selectedSong.filePath)}`}
                             className="display-audio"
                             style={{ width: '100%', maxWidth: '180px' }}
                             controls
@@ -2065,7 +1939,7 @@ function FullLayout() {
                       )}
                       {selectedSong.fileType === FILE_TYPES.PDF && (
                         <iframe
-                          src={`local-file://${selectedSong.filePath}`}
+                          src={`local-file://${encodeURI(selectedSong.filePath)}`}
                           className="display-pdf"
                           style={{
                             width: '100%',
@@ -2284,7 +2158,7 @@ function FullLayout() {
                       }}>
                         {selectedSong.fileType === FILE_TYPES.IMAGE && (
                           <img
-                            src={`local-file://${selectedSong.filePath}`}
+                            src={`local-file://${encodeURI(selectedSong.filePath)}`}
                             alt={selectedSong.title}
                             style={{
                               maxWidth: '100%',
@@ -2295,7 +2169,7 @@ function FullLayout() {
                         )}
                         {selectedSong.fileType === FILE_TYPES.VIDEO && (
                           <video
-                            src={`local-file://${selectedSong.filePath}`}
+                            src={`local-file://${encodeURI(selectedSong.filePath)}`}
                             style={{
                               maxWidth: '100%',
                               maxHeight: '100%',
@@ -3000,7 +2874,7 @@ function FullLayout() {
             id: `bg_custom_${Date.now()}_${idx}`,
             name,
             type: isVideo ? 'video' : 'image',
-            url: `local-file://${path}`,
+            url: `local-file://${encodeURI(path)}`,
             filePath: path,
             isCustom: true,
           };
@@ -3217,230 +3091,36 @@ function FullLayout() {
   };
 
   // ===== 键盘快捷键 =====
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // 如果焦点在输入框或文本域中，不处理快捷键
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-        return;
-      }
-
-      // F5 键：开始/停止投影
-      if (e.key === 'F5') {
-        e.preventDefault();
-        if (!isProjectionActive) {
-          syncToProjection();
-        } else {
-          electronAPI.stopProjection();
-          setIsProjectionActive(false);
-          if (currentSharingId) {
-            stopShareAndRestore();
-          }
-        }
-        return;
-      }
-
-      // F6 键：切换到应用分享
-      if (e.key === 'F6') {
-        e.preventDefault();
-        if (!isProjectionActive) {
-          alert(uiLanguage === 'en' ? 'Please start projection first' : uiLanguage === 'zh-Hant' ? '請先開始投屏' : '请先开始投影');
-          return;
-        }
-        if (!currentSharingId) {
-          if (!selectedSourceId) {
-            alert(uiLanguage === 'en' ? 'Please choose a share source first' : uiLanguage === 'zh-Hant' ? '請先選擇投屏源' : '请先选择投屏源');
-            return;
-          }
-          startAppSharing();
-        } else {
-          stopShareAndRestore();
-        }
-        return;
-      }
-
-      // F7 键：实时同步/取消同步
-      if (e.key === 'F7') {
-        e.preventDefault();
-        if (!isProjectionActive) {
-          alert(uiLanguage === 'en' ? 'Please start projection first' : uiLanguage === 'zh-Hant' ? '請先開始投屏' : '请先开始投影');
-          return;
-        }
-        if (isProjectionLocked) {
-          setIsProjectionLocked(false);
-        } else {
-          setIsProjectionLocked(true);
-          setLockedSlideIndex(currentSlideIndex);
-        }
-        return;
-      }
-
-      // F8 键：锁定/解锁投影
-      if (e.key === 'F8') {
-        e.preventDefault();
-        if (!isProjectionActive) {
-          alert(uiLanguage === 'en' ? 'Please start projection first' : uiLanguage === 'zh-Hant' ? '請先開始投屏' : '请先开始投影');
-          return;
-        }
-        setIsProjectionLocked(!isProjectionLocked);
-        if (!isProjectionLocked) {
-          setLockedSlideIndex(currentSlideIndex);
-        }
-        return;
-      }
-
-      // ESC 键退出投屏或应用分享
-      if (e.key === 'Escape') {
-        if (currentSharingId) {
-          stopShareAndRestore();
-          return;
-        }
-        if (isProjectionActive) {
-          electronAPI.stopProjection();
-          setIsProjectionActive(false);
-          return;
-        }
-      }
-
-      if (!selectedSong) return;
-
-      // Ctrl+S / Cmd+S: 保存
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        saveCurrentEdit();
-        return;
-      }
-
-      // Delete / Backspace: 删除当前幻灯片（需要确认）
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedSong.slides.length > 1) {
-          if (confirm(`确定要删除第 ${currentSlideIndex + 1} 页吗？`)) {
-            const newSlides = selectedSong.slides.filter((_, idx) => idx !== currentSlideIndex);
-            const newIndex = Math.min(currentSlideIndex, newSlides.length - 1);
-            setSelectedSong({ ...selectedSong, slides: newSlides });
-            setCurrentSlideIndex(newIndex);
-            if (selectedProject) {
-              const updatedProject = { ...selectedProject, slides: newSlides };
-              setSelectedProject(updatedProject);
-              setProjects(projects.map(p => p.id === selectedProject.id ? updatedProject : p));
-            }
-            // 保存删除历史用于恢复
-            setDeletedSlidesHistory([
-              ...deletedSlidesHistory,
-              { index: currentSlideIndex, content: selectedSong.slides[currentSlideIndex] }
-            ]);
-          }
-        }
-        e.preventDefault();
-        return;
-      }
-
-      // Ctrl+Z / Cmd+Z: 恢复最近删除的幻灯片
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        if (deletedSlidesHistory.length > 0) {
-          const lastDeleted = deletedSlidesHistory[deletedSlidesHistory.length - 1];
-          const newSlides = [...selectedSong.slides];
-          newSlides.splice(lastDeleted.index, 0, lastDeleted.content);
-          setSelectedSong({ ...selectedSong, slides: newSlides });
-          setCurrentSlideIndex(lastDeleted.index);
-          if (selectedProject) {
-            const updatedProject = { ...selectedProject, slides: newSlides };
-            setSelectedProject(updatedProject);
-            setProjects(projects.map(p => p.id === selectedProject.id ? updatedProject : p));
-          }
-          setDeletedSlidesHistory(deletedSlidesHistory.slice(0, -1));
-        }
-        e.preventDefault();
-        return;
-      }
-
-      // Ctrl+C / Cmd+C: 复制当前幻灯片
-      if ((e.ctrlKey || e.metaKey) && e.key === 'c' && !e.shiftKey) {
-        setClipboardSlide({ content: selectedSong.slides[currentSlideIndex], operation: 'copy' });
-        setCutSlideIndex(null);
-        e.preventDefault();
-        return;
-      }
-
-      // Ctrl+X / Cmd+X: 剪切当前幻灯片
-      if ((e.ctrlKey || e.metaKey) && e.key === 'x' && !e.shiftKey) {
-        setClipboardSlide({ content: selectedSong.slides[currentSlideIndex], operation: 'cut' });
-        setCutSlideIndex(currentSlideIndex);
-        e.preventDefault();
-        return;
-      }
-
-      // Ctrl+V / Cmd+V: 粘贴幻灯片
-      if ((e.ctrlKey || e.metaKey) && e.key === 'v' && !e.shiftKey) {
-        if (clipboardSlide) {
-          const newSlides = [...selectedSong.slides];
-
-          if (clipboardSlide.operation === 'cut' && cutSlideIndex !== null) {
-            const sourceIndex = cutSlideIndex < currentSlideIndex ? cutSlideIndex : cutSlideIndex;
-            const adjustedTarget = cutSlideIndex < currentSlideIndex ? currentSlideIndex : currentSlideIndex + 1;
-            newSlides.splice(sourceIndex, 1);
-            newSlides.splice(adjustedTarget, 0, clipboardSlide.content);
-            setCutSlideIndex(null);
-            setCurrentSlideIndex(adjustedTarget);
-          } else {
-            newSlides.splice(currentSlideIndex + 1, 0, clipboardSlide.content);
-            setCurrentSlideIndex(currentSlideIndex + 1);
-          }
-
-          setSelectedSong({ ...selectedSong, slides: newSlides });
-          if (selectedProject) {
-            const updatedProject = { ...selectedProject, slides: newSlides };
-            setSelectedProject(updatedProject);
-            setProjects(projects.map(p => p.id === selectedProject.id ? updatedProject : p));
-          }
-        }
-        e.preventDefault();
-        return;
-      }
-
-      if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-        e.preventDefault();
-        if (currentSlideIndex > 0) {
-          const newIndex = currentSlideIndex - 1;
-          setCurrentSlideIndex(newIndex);
-          if (isProjectionActive && !isProjectionLocked) {
-            setLockedSlideIndex(newIndex);
-            // 只在真正需要时才更新投影
-            const songToUse = selectedSong || (selectedProject?.type === PROJECT_TYPES.SONG ? selectedProject : null);
-            if (songToUse) {
-              electronAPI.updateLyrics({
-                song: songToUse,
-                slideIndex: newIndex,
-                theme: currentTheme,
-                background: currentBackground
-              });
-            }
-          }
-        }
-      } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-        e.preventDefault();
-        if (currentSlideIndex < selectedSong.slides.length - 1) {
-          const newIndex = currentSlideIndex + 1;
-          setCurrentSlideIndex(newIndex);
-          if (isProjectionActive && !isProjectionLocked) {
-            setLockedSlideIndex(newIndex);
-            // 只在真正需要时才更新投影
-            const songToUse = selectedSong || (selectedProject?.type === PROJECT_TYPES.SONG ? selectedProject : null);
-            if (songToUse) {
-              electronAPI.updateLyrics({
-                song: songToUse,
-                slideIndex: newIndex,
-                theme: currentTheme,
-                background: currentBackground
-              });
-            }
-          }
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentSlideIndex, selectedSong, currentSharingId, isProjectionActive, isProjectionLocked, selectedProject, currentTheme, currentBackground, deletedSlidesHistory, clipboardSlide, cutSlideIndex, projects]);
+  useKeyboardShortcuts({
+    currentSlideIndex,
+    selectedSong,
+    selectedProject,
+    projects,
+    currentSharingId,
+    isProjectionActive,
+    isProjectionLocked,
+    currentTheme,
+    currentBackground,
+    deletedSlidesHistory,
+    clipboardSlide,
+    cutSlideIndex,
+    selectedSourceId,
+    uiLanguage,
+    syncToProjection,
+    startAppSharing,
+    stopShareAndRestore,
+    saveCurrentEdit,
+    setIsProjectionActive,
+    setIsProjectionLocked,
+    setLockedSlideIndex,
+    setCurrentSlideIndex,
+    setSelectedSong,
+    setSelectedProject,
+    setProjects,
+    setDeletedSlidesHistory,
+    setClipboardSlide,
+    setCutSlideIndex,
+  });
 
   // 保存通知历史
   const saveNotification = (text) => {
@@ -4908,6 +4588,38 @@ function FullLayout() {
           height: 1px;
           background: #323341;
           margin: 4px 0;
+        }
+
+        .right-click-menu-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 6px 12px;
+          gap: 16px;
+        }
+
+        .right-click-menu-title {
+          font-size: 12px;
+          color: #999999;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 140px;
+        }
+
+        .right-click-menu-close {
+          background: none;
+          border: none;
+          color: #999999;
+          cursor: pointer;
+          font-size: 14px;
+          padding: 0;
+          line-height: 1;
+          flex-shrink: 0;
+        }
+
+        .right-click-menu-close:hover {
+          color: #000000;
         }
 
         .chapter-card {
@@ -7244,9 +6956,16 @@ function FullLayout() {
                     <button
                       className="tool-btn tool-btn-primary"
                       style={{ fontSize: '13px', padding: '8px 16px' }}
-                      onClick={() => setRewardModalOpen(true)}
+                      onClick={() => window.electronAPI?.openExternal('https://afdian.net/a/issayh')}
                     >
                       💚 {uiLanguage === 'en' ? 'Support Us' : uiLanguage === 'zh-Hant' ? '支持我們' : '支持我们'}
+                    </button>
+                    <button
+                      className="tool-btn"
+                      style={{ fontSize: '13px', padding: '8px 16px', marginLeft: '8px' }}
+                      onClick={() => window.electronAPI?.openExternal('https://github.com/sponsors/issawork7877')}
+                    >
+                      GitHub Sponsors
                     </button>
                   </div>
                 </div>
@@ -7515,29 +7234,70 @@ function FullLayout() {
         <div
           className="right-click-menu"
           style={{ left: bgRightClickMenu.x, top: bgRightClickMenu.y }}
-          onClick={() => setBgRightClickMenu(null)}
+          onClick={(e) => {
+            // Close when clicking the menu background itself (not items)
+            if (e.target === e.currentTarget) {
+              setBgRightClickMenu(null);
+            }
+          }}
         >
+          <div className="right-click-menu-header">
+            <span className="right-click-menu-title">{bgRightClickMenu.background.name}</span>
+            <button
+              className="right-click-menu-close"
+              onClick={(e) => {
+                e.stopPropagation();
+                setBgRightClickMenu(null);
+              }}
+              title={uiLanguage === 'en' ? 'Close' : uiLanguage === 'zh-Hant' ? '關閉' : '关闭'}
+            >
+              ✕
+            </button>
+          </div>
+          <div className="right-click-menu-divider"></div>
+          {bgRightClickMenu.background.isCustom && (
+            <div
+              className="right-click-menu-item"
+              onClick={(e) => {
+                e.stopPropagation();
+                const bgToRename = bgRightClickMenu.background;
+                showInputPrompt(
+                  uiLanguage === 'en' ? 'Rename background' : uiLanguage === 'zh-Hant' ? '重新命名背景' : '重命名背景',
+                  uiLanguage === 'en' ? 'Enter a new name:' : uiLanguage === 'zh-Hant' ? '請輸入新名稱：' : '请输入新名称：',
+                  bgToRename.name,
+                  (newName) => {
+                    if (newName && newName.trim()) {
+                      setCustomBackgrounds(
+                        customBackgrounds.map(bg =>
+                          bg.id === bgToRename.id ? { ...bg, name: newName.trim() } : bg
+                        )
+                      );
+                    }
+                  }
+                );
+                setBgRightClickMenu(null);
+              }}
+            >
+              {uiLanguage === 'en' ? 'Rename' : uiLanguage === 'zh-Hant' ? '重新命名' : '重命名'}
+            </div>
+          )}
+          {bgRightClickMenu.background.isCustom && <div className="right-click-menu-divider"></div>}
           <div
             className="right-click-menu-item danger"
             onClick={(e) => {
               e.stopPropagation();
               if (confirm(uiLanguage === 'en' ? 'Delete this background?' : uiLanguage === 'zh-Hant' ? '確定要刪除這個背景嗎？' : '确定要删除这个背景吗？')) {
-                // 如果当前正在使用这个背景，切换到默认背景
                 if (currentBackgroundId === bgRightClickMenu.background.id) {
-                  // 找到第一个未删除的默认背景
                   const firstAvailableBg = defaultBackgrounds.find(
                     bg => bg.id !== 'none' && !deletedDefaultBackgroundIds.includes(bg.id)
                   ) || defaultBackgrounds[0];
                   setCurrentBackgroundId(firstAvailableBg.id);
                 }
-                // 判断是自定义背景还是默认背景，分别处理
                 if (bgRightClickMenu.background.isCustom) {
-                  // 从自定义背景列表中删除
                   setCustomBackgrounds(
                     customBackgrounds.filter(bg => bg.id !== bgRightClickMenu.background.id)
                   );
                 } else {
-                  // 添加到已删除的默认背景ID列表
                   setDeletedDefaultBackgroundIds([
                     ...deletedDefaultBackgroundIds,
                     bgRightClickMenu.background.id
@@ -7550,6 +7310,27 @@ function FullLayout() {
             🗑️ {uiLanguage === 'en' ? 'Delete background' : uiLanguage === 'zh-Hant' ? '刪除背景' : '删除背景'}
           </div>
         </div>
+      )}
+
+      {/* Click-outside overlay to dismiss context menus */}
+      {(rightClickMenu || bgRightClickMenu || songRightClickMenu || slideRightClickMenu) && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 9998,
+          }}
+          onClick={() => {
+            setRightClickMenu(null);
+            setBgRightClickMenu(null);
+            setSongRightClickMenu(null);
+            setSlideRightClickMenu(null);
+          }}
+          onContextMenu={(e) => e.preventDefault()}
+        />
       )}
 
       {/* 悬浮诗歌预览层 */}
@@ -7613,40 +7394,6 @@ function FullLayout() {
         onSongsImported={handleSongsImported}
       />
 
-      {/* 赞赏码弹窗 */}
-      {rewardModalOpen && (
-        <div className="modal-overlay" onClick={() => setRewardModalOpen(false)}>
-          <div className="modal-content" style={{ maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>
-                {uiLanguage === 'en' ? 'Support Us' : uiLanguage === 'zh-Hant' ? '支持我們' : '支持我们'}
-              </h3>
-              <button className="close-btn" onClick={() => setRewardModalOpen(false)}>✕</button>
-            </div>
-            <div className="modal-body" style={{ textAlign: 'center' }}>
-              <p style={{ color: '#888', fontSize: '13px', marginBottom: '20px' }}>
-                {uiLanguage === 'en'
-                  ? 'Scan the QR code with WeChat to support us'
-                  : uiLanguage === 'zh-Hant'
-                    ? '請用微信掃碼支持我們'
-                    : '请用微信扫码支持我们'}
-              </p>
-              <img
-                src="./wx-reward-qr.png"
-                alt="WeChat Reward QR"
-                style={{ width: '280px', height: '280px', borderRadius: '12px' }}
-              />
-              <p style={{ color: '#aaa', fontSize: '12px', marginTop: '16px' }}>
-                {uiLanguage === 'en'
-                  ? 'Thank you for your support! ❤️'
-                  : uiLanguage === 'zh-Hant'
-                    ? '感謝你的支持！❤️'
-                    : '感谢你的支持！❤️'}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
