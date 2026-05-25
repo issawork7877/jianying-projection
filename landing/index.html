@@ -215,6 +215,8 @@
     letter-spacing: 0.3px;
   }
   .support-links a:hover { border-color: #555; }
+  .support-links a.primary { background: var(--accent); color: #000; border-color: var(--accent); }
+  .support-links a.primary:hover { background: #e0e0e0; }
 
   /* ---- Footer ---- */
   footer {
@@ -400,9 +402,50 @@
 <!-- Support -->
 <section>
   <div class="section-label" lang-key="supportLabel">支持开发</div>
-  <div class="support-links">
-    <a href="https://github.com/sponsors/issawork7877">GitHub Sponsors</a>
-    <a href="https://ifdian.net/a/issawork7877">爱发电</a>
+
+  <div style="max-width: 640px; margin: 0 auto;">
+
+    <p style="font-size: 15px; color: var(--text); line-height: 1.8; margin-bottom: 32px; text-align: center;" lang-key="supportStory">
+      嗨，我是简影投屏的独立开发者。从第一行代码到现在的每一处细节——写代码、做设计、修 Bug、写文档——全部由我一个人完成。这个软件永远免费、永远开源、永远没有广告。但我需要你的帮助来让它持续运行下去。
+    </p>
+
+    <div style="background: var(--surface); border: 1px solid var(--border); padding: 28px 32px; margin-bottom: 32px;">
+      <h3 style="font-size: 13px; color: var(--text-dim); letter-spacing: 1px; margin-bottom: 20px; text-transform: uppercase;" lang-key="supportWhereTitle">
+        你的支持将用于
+      </h3>
+      <div style="display: grid; gap: 14px;">
+        <div style="display: flex; justify-content: space-between; font-size: 14px;">
+          <span style="color: var(--text);">🔐 代码签名证书</span>
+          <span style="color: var(--text-dim); font-family: var(--mono);" lang-key="supportCostCerts">~$400-500/年</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px;">
+          <span style="color: var(--text);">🖥️ 跨平台测试设备</span>
+          <span style="color: var(--text-dim); font-family: var(--mono);" lang-key="supportCostHardware">一次性投入</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px;">
+          <span style="color: var(--text);">🌐 域名 & 网站托管</span>
+          <span style="color: var(--text-dim); font-family: var(--mono);" lang-key="supportCostHosting">~$150/年</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px;">
+          <span style="color: var(--text);">📚 圣经译本授权费</span>
+          <span style="color: var(--text-dim); font-family: var(--mono);" lang-key="supportCostBible">待确认</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px;">
+          <span style="color: var(--text);">☕ 持续开发的"燃料"</span>
+          <span style="color: var(--text-dim); font-family: var(--mono);" lang-key="supportCostCoffee">无价</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="support-links" style="margin-bottom: 20px;">
+      <a href="https://ifdian.net/a/issawork7877" class="primary">❤️ 爱发电支持我</a>
+      <a href="https://github.com/sponsors/issawork7877">GitHub Sponsors</a>
+    </div>
+
+    <p style="font-size: 12px; color: var(--text-dim); text-align: center;" lang-key="supportThanks">
+      每一份支持，无论金额大小，都是这个项目继续下去的动力。谢谢你。
+    </p>
+
   </div>
 </section>
 
@@ -461,7 +504,15 @@
       resFree: "免费商用",
       resCCBY: "部分需署名",
       resourcesDisclaimer: "以上为第三方网站推荐，版权归属原作者，请遵循各网站许可条款使用。",
-      supportLabel: "支持开发"
+      supportLabel: "支持开发",
+      supportStory: "嗨，我是简影投屏的独立开发者。从第一行代码到现在的每一处细节——写代码、做设计、修 Bug、写文档——全部由我一个人完成。这个软件永远免费、永远开源、永远没有广告。但我需要你的帮助来让它持续运行下去。",
+      supportWhereTitle: "你的支持将用于",
+      supportCostCerts: "~$400-500/年",
+      supportCostHardware: "一次性投入",
+      supportCostHosting: "~$150/年",
+      supportCostBible: "待确认",
+      supportCostCoffee: "无价",
+      supportThanks: "每一份支持，无论金额大小，都是这个项目继续下去的动力。谢谢你。"
     },
     en: {
       navTitle: "JianYing Projection",
@@ -506,7 +557,15 @@
       resFree: "Free for commercial use",
       resCCBY: "Some require attribution",
       resourcesDisclaimer: "These are third-party site recommendations. Copyright belongs to original authors. Please follow each site's license terms.",
-      supportLabel: "Support"
+      supportLabel: "Support",
+      supportStory: "Hi, I'm the solo developer behind JianYing Projection. Every line of code, every design decision, every bug fix — it's all me. This software will always be free, always open source, always ad-free. But I need your help to keep it going.",
+      supportWhereTitle: "Your support goes toward",
+      supportCostCerts: "~$400-500/yr",
+      supportCostHardware: "One-time investment",
+      supportCostHosting: "~$150/yr",
+      supportCostBible: "TBD",
+      supportCostCoffee: "Priceless",
+      supportThanks: "Every contribution, no matter the amount, is what keeps this project alive. Thank you."
     }
   };
 
