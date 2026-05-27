@@ -476,7 +476,7 @@ function FullLayout() {
     if (isInitializedRef.current) return;
     isInitializedRef.current = true;
 
-    const stored = localStorage.getItem('jiayan_songs');
+    const stored = localStorage.getItem('jianying_songs');
     if (stored) {
       try {
         setSongs(JSON.parse(stored));
@@ -487,7 +487,7 @@ function FullLayout() {
       setSongs(defaultSongs);
     }
 
-    const projectsStored = localStorage.getItem('jiayan_projects');
+    const projectsStored = localStorage.getItem('jianying_projects');
     if (projectsStored) {
       try {
         setProjects(JSON.parse(projectsStored));
@@ -495,7 +495,7 @@ function FullLayout() {
     }
 
     // 加载自定义背景
-    const backgroundsStored = localStorage.getItem('jiayan_custom_backgrounds');
+    const backgroundsStored = localStorage.getItem('jianying_custom_backgrounds');
     if (backgroundsStored) {
       try {
         setCustomBackgrounds(JSON.parse(backgroundsStored));
@@ -503,7 +503,7 @@ function FullLayout() {
     }
 
     // 加载已删除的默认背景ID
-    const deletedBgStored = localStorage.getItem('jiayan_deleted_default_backgrounds');
+    const deletedBgStored = localStorage.getItem('jianying_deleted_default_backgrounds');
     if (deletedBgStored) {
       try {
         setDeletedDefaultBackgroundIds(JSON.parse(deletedBgStored));
@@ -539,15 +539,15 @@ function FullLayout() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('jiayan_projects', JSON.stringify(projects));
+    localStorage.setItem('jianying_projects', JSON.stringify(projects));
   }, [projects]);
 
   useEffect(() => {
-    localStorage.setItem('jiayan_custom_backgrounds', JSON.stringify(customBackgrounds));
+    localStorage.setItem('jianying_custom_backgrounds', JSON.stringify(customBackgrounds));
   }, [customBackgrounds]);
 
   useEffect(() => {
-    localStorage.setItem('jiayan_deleted_default_backgrounds', JSON.stringify(deletedDefaultBackgroundIds));
+    localStorage.setItem('jianying_deleted_default_backgrounds', JSON.stringify(deletedDefaultBackgroundIds));
   }, [deletedDefaultBackgroundIds]);
 
   const getDisplaySlideIndex = () => {
@@ -2941,7 +2941,7 @@ function FullLayout() {
                     setProjects(projects.map(p =>
                       p.id === selectedProject.id ? updatedProject : p
                     ));
-                    localStorage.setItem('jiayan_projects', JSON.stringify(
+                    localStorage.setItem('jianying_projects', JSON.stringify(
                       projects.map(p => p.id === selectedProject.id ? updatedProject : p)
                     ));
                   }

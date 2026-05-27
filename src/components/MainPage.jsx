@@ -306,7 +306,7 @@ function MainPage() {
     isInitializedRef.current = true;
 
     // 加载默认歌曲
-    const stored = localStorage.getItem('jiayan_songs');
+    const stored = localStorage.getItem('jianying_songs');
     if (stored) {
       try {
         setSongs(JSON.parse(stored));
@@ -318,7 +318,7 @@ function MainPage() {
     }
 
     // 加载收藏
-    const favStored = localStorage.getItem('jiayan_favorites');
+    const favStored = localStorage.getItem('jianying_favorites');
     if (favStored) {
       try {
         setFavorites(JSON.parse(favStored));
@@ -326,7 +326,7 @@ function MainPage() {
     }
 
     // 加载最近使用
-    const recentStored = localStorage.getItem('jiayan_recent');
+    const recentStored = localStorage.getItem('jianying_recent');
     if (recentStored) {
       try {
         setRecentSongs(JSON.parse(recentStored));
@@ -334,7 +334,7 @@ function MainPage() {
     }
 
     // 加载自定义背景
-    const bgStored = localStorage.getItem('jiayan_custom_backgrounds');
+    const bgStored = localStorage.getItem('jianying_custom_backgrounds');
     if (bgStored) {
       try {
         setCustomBackgrounds(JSON.parse(bgStored));
@@ -387,22 +387,22 @@ function MainPage() {
 
   // 保存歌曲到本地存储
   useEffect(() => {
-    localStorage.setItem('jiayan_songs', JSON.stringify(songs));
+    localStorage.setItem('jianying_songs', JSON.stringify(songs));
   }, [songs]);
 
   // 保存收藏
   useEffect(() => {
-    localStorage.setItem('jiayan_favorites', JSON.stringify(favorites));
+    localStorage.setItem('jianying_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
   // 保存最近使用
   useEffect(() => {
-    localStorage.setItem('jiayan_recent', JSON.stringify(recentSongs));
+    localStorage.setItem('jianying_recent', JSON.stringify(recentSongs));
   }, [recentSongs]);
 
   // 保存自定义背景
   useEffect(() => {
-    localStorage.setItem('jiayan_custom_backgrounds', JSON.stringify(customBackgrounds));
+    localStorage.setItem('jianying_custom_backgrounds', JSON.stringify(customBackgrounds));
   }, [customBackgrounds]);
 
   // 添加到最近使用

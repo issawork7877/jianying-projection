@@ -238,7 +238,7 @@ function NewMainPage() {
     if (isInitializedRef.current) return;
     isInitializedRef.current = true;
 
-    const stored = localStorage.getItem('jiayan_songs');
+    const stored = localStorage.getItem('jianying_songs');
     if (stored) {
       try {
         setSongs(JSON.parse(stored));
@@ -249,28 +249,28 @@ function NewMainPage() {
       setSongs(defaultSongs);
     }
 
-    const favStored = localStorage.getItem('jiayan_favorites');
+    const favStored = localStorage.getItem('jianying_favorites');
     if (favStored) {
       try {
         setFavorites(JSON.parse(favStored));
       } catch (e) {}
     }
 
-    const recentStored = localStorage.getItem('jiayan_recent');
+    const recentStored = localStorage.getItem('jianying_recent');
     if (recentStored) {
       try {
         setRecentSongs(JSON.parse(recentStored));
       } catch (e) {}
     }
 
-    const bgStored = localStorage.getItem('jiayan_custom_backgrounds');
+    const bgStored = localStorage.getItem('jianying_custom_backgrounds');
     if (bgStored) {
       try {
         setCustomBackgrounds(JSON.parse(bgStored));
       } catch (e) {}
     }
 
-    const playlistStored = localStorage.getItem('jiayan_playlists');
+    const playlistStored = localStorage.getItem('jianying_playlists');
     if (playlistStored) {
       try {
         setPlaylists(JSON.parse(playlistStored));
@@ -304,23 +304,23 @@ function NewMainPage() {
 
   // 保存数据
   useEffect(() => {
-    localStorage.setItem('jiayan_songs', JSON.stringify(songs));
+    localStorage.setItem('jianying_songs', JSON.stringify(songs));
   }, [songs]);
 
   useEffect(() => {
-    localStorage.setItem('jiayan_favorites', JSON.stringify(favorites));
+    localStorage.setItem('jianying_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
   useEffect(() => {
-    localStorage.setItem('jiayan_recent', JSON.stringify(recentSongs));
+    localStorage.setItem('jianying_recent', JSON.stringify(recentSongs));
   }, [recentSongs]);
 
   useEffect(() => {
-    localStorage.setItem('jiayan_custom_backgrounds', JSON.stringify(customBackgrounds));
+    localStorage.setItem('jianying_custom_backgrounds', JSON.stringify(customBackgrounds));
   }, [customBackgrounds]);
 
   useEffect(() => {
-    localStorage.setItem('jiayan_playlists', JSON.stringify(playlists));
+    localStorage.setItem('jianying_playlists', JSON.stringify(playlists));
   }, [playlists]);
 
   // 歌单操作
@@ -859,7 +859,7 @@ function NewMainPage() {
       {/* 顶部导航栏 */}
       <nav className="top-nav">
         <div className="nav-brand">
-          <h1>诗与歌</h1>
+          <h1>简影投屏</h1>
         </div>
         <div className="nav-items">
           <button

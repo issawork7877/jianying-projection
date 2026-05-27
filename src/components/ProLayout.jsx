@@ -227,7 +227,7 @@ function ProLayout() {
     if (isInitializedRef.current) return;
     isInitializedRef.current = true;
 
-    const stored = localStorage.getItem('jiayan_songs');
+    const stored = localStorage.getItem('jianying_songs');
     if (stored) {
       try {
         setSongs(JSON.parse(stored));
@@ -238,14 +238,14 @@ function ProLayout() {
       setSongs(defaultSongs);
     }
 
-    const favStored = localStorage.getItem('jiayan_favorites');
+    const favStored = localStorage.getItem('jianying_favorites');
     if (favStored) {
       try {
         setFavorites(JSON.parse(favStored));
       } catch (e) {}
     }
 
-    const bgStored = localStorage.getItem('jiayan_custom_backgrounds');
+    const bgStored = localStorage.getItem('jianying_custom_backgrounds');
     if (bgStored) {
       try {
         setCustomBackgrounds(JSON.parse(bgStored));
@@ -274,15 +274,15 @@ function ProLayout() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('jiayan_songs', JSON.stringify(songs));
+    localStorage.setItem('jianying_songs', JSON.stringify(songs));
   }, [songs]);
 
   useEffect(() => {
-    localStorage.setItem('jiayan_favorites', JSON.stringify(favorites));
+    localStorage.setItem('jianying_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
   useEffect(() => {
-    localStorage.setItem('jiayan_custom_backgrounds', JSON.stringify(customBackgrounds));
+    localStorage.setItem('jianying_custom_backgrounds', JSON.stringify(customBackgrounds));
   }, [customBackgrounds]);
 
   const toggleFavorite = (songId, e) => {

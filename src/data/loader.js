@@ -3,7 +3,7 @@
  * 支持运行时导入 .jydata 数据包，管理 localStorage 中的数据
  */
 
-const STORAGE_KEY_PREFIX = 'jiayan_imported_';
+const STORAGE_KEY_PREFIX = 'jianying_imported_';
 
 /**
  * 导入数据包（从 JSON 字符串或已解析的对象）

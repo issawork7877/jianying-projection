@@ -82,7 +82,7 @@ async function buildBiblePack(versionId, name, description, modulePath, exportNa
     data: verses,
   };
 
-  writePack(`jiayan-bible-${versionId}.jydata`, pack);
+  writePack(`jianying-bible-${versionId}.jydata`, pack);
 }
 
 async function buildSongsPack(id, name, description, modulePath) {
@@ -102,7 +102,7 @@ async function buildSongsPack(id, name, description, modulePath) {
     data: songs,
   };
 
-  writePack(`jiayan-songs-${id}.jydata`, pack);
+  writePack(`jianying-songs-${id}.jydata`, pack);
 }
 
 // ─── Main ────────────────────────────────────────────────
